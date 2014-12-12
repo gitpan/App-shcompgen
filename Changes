@@ -1,0 +1,22 @@
+Revision history for App-shcompgen
+
+0.02    2014-12-13 (PERLANCAR)
+
+        - Rename module/dist from App-ShellCompletionInstaller to App-shcompgen.
+
+        - [ux] Change interface to use subcommands.
+
+        - [Bugfix] Fix loader function for bash: forgot to pass argument to
+          _completion_loader.
+
+        - [ux] Add subcommand: 'init', to help ease initialization.
+
+
+0.01    2014-12-12 (PERLANCAR)
+
+        - First release, an evolution from App-BashCompletionProg and
+          App-BashCompletionF; this one supports multiple shells and works with
+          shells' standard completion scripts layout. Another advantage is the
+          completion scripts can be activated on the current shell (instead of
+          waiting to start a new shell) because we use on-demand loading (e.g.
+          'complete -D' on bash). Early release though, only supports bash.
