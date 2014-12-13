@@ -1,7 +1,7 @@
 #!perl
 
 our $DATE = '2014-12-13'; # DATE
-our $VERSION = '0.03'; # VERSION
+our $VERSION = '0.04'; # VERSION
 # FRAGMENT id=shcompgen-nohint
 
 use 5.010;
@@ -39,7 +39,7 @@ shcompgen - Generate shell completion scripts
 
 =head1 VERSION
 
-This document describes version 0.03 of shcompgen (from Perl distribution App-shcompgen), released on 2014-12-13.
+This document describes version 0.04 of shcompgen (from Perl distribution App-shcompgen), released on 2014-12-13.
 
 =head1 SYNOPSIS
 

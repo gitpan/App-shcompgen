@@ -29,6 +29,7 @@
       },
       "runtime" : {
          "requires" : {
+            "Complete::Util" : "0",
             "File::Path" : "2.09",
             "File::Slurp::Tiny" : "0",
             "File::Which" : "0",
@@ -64,7 +65,7 @@
          "web" : "https://github.com/perlancar/perl-App-shcompgen"
       }
    },
-   "version" : "0.03",
+   "version" : "0.04",
    "x_Dist_Zilla" : {
       "perl" : {
          "version" : "5.018001"
@@ -184,7 +185,7 @@
          {
             "class" : "Dist::Zilla::Plugin::GenShellCompletion",
             "name" : "@Author::PERLANCAR/GenShellCompletion",
-            "version" : "0.04"
+            "version" : "0.05"
          },
          {
             "class" : "Dist::Zilla::Plugin::OurDate",

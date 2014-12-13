@@ -1,7 +1,7 @@
 package App::shcompgen;
 
 our $DATE = '2014-12-13'; # DATE
-our $VERSION = '0.03'; # VERSION
+our $VERSION = '0.04'; # VERSION
 
 use 5.010001;
 use strict;
@@ -18,6 +18,13 @@ use Perinci::Sub::Util qw(err);
 use String::ShellQuote;
 
 our %SPEC;
+
+my $_complete_prog = sub {
+    require Complete::Util;
+
+    my %args = @_;
+    Complete::Util::complete_program(word=>$args{word}, ci=>1); # XXX plus exec on curdir
+};
 
 my $re_progname = qr/\A[A-Za-z0-9_.,:-]+\z/;
 
@@ -142,7 +149,7 @@ sub _gen_completion_script {
 
     my $detres = $args{detect_res};
     my $shell  = $args{shell};
-    my $prog   = $args{prog};
+    my $prog   = $detres->[3]{'func.completee'} // $args{prog};
     my $qprog  = shell_quote($prog);
     my $comp   = $detres->[3]{'func.completer_command'};
     my $qcomp  = shell_quote($comp);
@@ -449,6 +456,7 @@ Can contain path (e.g. `../foo`) or a plain word (`foo`) in which case will be
 searched from PATH.
 
 _
+            element_completion => $_complete_prog,
         },
         replace => {
             summary => 'Replace existing script',
@@ -538,6 +546,7 @@ Can contain path (e.g. `../foo`) or a plain word (`foo`) in which case will be
 searched from PATH.
 
 _
+            element_completion => $_complete_prog,
         },
     },
 };
@@ -562,7 +571,7 @@ App::shcompgen - Backend for shcompgen script
 
 =head1 VERSION
 
-This document describes version 0.03 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-13.
+This document describes version 0.04 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-13.
 
 =head1 FUNCTIONS
 
