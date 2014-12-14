@@ -2,7 +2,7 @@ NAME
     App::shcompgen - Backend for shcompgen script
 
 VERSION
-    This document describes version 0.05 of App::shcompgen (from Perl
+    This document describes version 0.06 of App::shcompgen (from Perl
     distribution App-shcompgen), released on 2014-12-14.
 
 FUNCTIONS

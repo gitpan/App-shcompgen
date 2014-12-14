@@ -34,7 +34,7 @@ resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=App-shcompgen
   homepage: https://metacpan.org/release/App-shcompgen
   repository: git://github.com/perlancar/perl-App-shcompgen.git
-version: '0.05'
+version: '0.06'
 x_Dist_Zilla:
   perl:
     version: '5.018002'
@@ -42,7 +42,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::shcompgen::InitOnInstall
       name: shcompgen::InitOnInstall
-      version: '0.01'
+      version: '0.02'
     -
       class: Dist::Zilla::Plugin::GatherDir
       config:

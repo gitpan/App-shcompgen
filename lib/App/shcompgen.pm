@@ -1,7 +1,7 @@
 package App::shcompgen;
 
 our $DATE = '2014-12-14'; # DATE
-our $VERSION = '0.05'; # VERSION
+our $VERSION = '0.06'; # VERSION
 
 use 5.010001;
 use strict;
@@ -624,7 +624,7 @@ App::shcompgen - Backend for shcompgen script
 
 =head1 VERSION
 
-This document describes version 0.05 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-14.
+This document describes version 0.06 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-14.
 
 =head1 FUNCTIONS
 
