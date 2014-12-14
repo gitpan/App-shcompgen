@@ -2,8 +2,8 @@ NAME
     App::shcompgen - Backend for shcompgen script
 
 VERSION
-    This document describes version 0.04 of App::shcompgen (from Perl
-    distribution App-shcompgen), released on 2014-12-13.
+    This document describes version 0.05 of App::shcompgen (from Perl
+    distribution App-shcompgen), released on 2014-12-14.
 
 FUNCTIONS
   generate(%args) -> [status, msg, result, meta]
@@ -11,11 +11,13 @@ FUNCTIONS
 
     Arguments ('*' denotes required arguments):
 
-    *   bash_global_dir => *str* (default: "/etc/bash_completion.d")
+    *   bash_global_dir => *array* (default:
+        ["/usr/share/bash-completion/completions",
+        "/etc/bash_completion.d"])
 
         Directory to put completions scripts.
 
-    *   bash_per_user_dir => *str*
+    *   bash_per_user_dir => *array*
 
         Directory to put completions scripts.
 
@@ -70,15 +72,17 @@ FUNCTIONS
     Initialize shcompgen.
 
     This subcommand creates the completion directories and initialization
-    shell script.
+    shell script, as well as run "generate".
 
     Arguments ('*' denotes required arguments):
 
-    *   bash_global_dir => *str* (default: "/etc/bash_completion.d")
+    *   bash_global_dir => *array* (default:
+        ["/usr/share/bash-completion/completions",
+        "/etc/bash_completion.d"])
 
         Directory to put completions scripts.
 
-    *   bash_per_user_dir => *str*
+    *   bash_per_user_dir => *array*
 
         Directory to put completions scripts.
 
@@ -120,11 +124,13 @@ FUNCTIONS
 
     Arguments ('*' denotes required arguments):
 
-    *   bash_global_dir => *str* (default: "/etc/bash_completion.d")
+    *   bash_global_dir => *array* (default:
+        ["/usr/share/bash-completion/completions",
+        "/etc/bash_completion.d"])
 
         Directory to put completions scripts.
 
-    *   bash_per_user_dir => *str*
+    *   bash_per_user_dir => *array*
 
         Directory to put completions scripts.
 
@@ -168,11 +174,13 @@ FUNCTIONS
 
     Arguments ('*' denotes required arguments):
 
-    *   bash_global_dir => *str* (default: "/etc/bash_completion.d")
+    *   bash_global_dir => *array* (default:
+        ["/usr/share/bash-completion/completions",
+        "/etc/bash_completion.d"])
 
         Directory to put completions scripts.
 
-    *   bash_per_user_dir => *str*
+    *   bash_per_user_dir => *array*
 
         Directory to put completions scripts.
 

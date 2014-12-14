@@ -1,7 +1,7 @@
 package App::shcompgen;
 
-our $DATE = '2014-12-13'; # DATE
-our $VERSION = '0.04'; # VERSION
+our $DATE = '2014-12-14'; # DATE
+our $VERSION = '0.05'; # VERSION
 
 use 5.010001;
 use strict;
@@ -9,22 +9,11 @@ use warnings;
 use experimental 'smartmatch';
 use Log::Any '$log';
 
-use File::Path qw(make_path);
 use File::Slurp::Tiny qw(read_file write_file);
-use File::Which;
-use List::Util qw(first);
 use Perinci::Object;
 use Perinci::Sub::Util qw(err);
-use String::ShellQuote;
 
 our %SPEC;
-
-my $_complete_prog = sub {
-    require Complete::Util;
-
-    my %args = @_;
-    Complete::Util::complete_program(word=>$args{word}, ci=>1); # XXX plus exec on curdir
-};
 
 my $re_progname = qr/\A[A-Za-z0-9_.,:-]+\z/;
 
@@ -70,42 +59,44 @@ _
 
     bash_global_dir => {
         summary => 'Directory to put completions scripts',
-        schema  => 'str*',
-        default => '/etc/bash_completion.d',
+        schema  => ['array*', of => 'str*'],
+        default => ['/usr/share/bash-completion/completions',
+                    '/etc/bash_completion.d'],
     },
     bash_per_user_dir => {
         summary => 'Directory to put completions scripts',
-        schema  => 'str*',
+        schema  => ['array*', of => 'str*'],
     },
 
     #fish_global_dir => {
     #    summary => 'Directory to put completions scripts',
-    #    schema  => 'str*',
-    #    default => '/etc/fish/completions',
+    #    schema  => ['array*', of => 'str*'],
+    #    default => ['/usr/share/fish/completions', '/etc/fish/completions'],
     #},
     #fish_per_user_dir => {
     #    summary => 'Directory to put completions scripts',
-    #    schema  => 'str*',
+    #    schema  => ['array*', of => 'str*'],
     #},
 
     #tcsh_global_dir => {
     #    summary => 'Directory to put completions scripts',
-    #    schema  => 'str*',
+    #    schema  => ['array*', of => 'str*'],
     #    default => '/etc/fish/completions',
     #},
     #tcsh_per_user_dir => {
     #    summary => 'Directory to put completions scripts',
-    #    schema  => 'str*',
+    #    schema  => ['array*', of => 'str*'],
     #},
 
     #zsh_global_dir => {
     #    summary => 'Directory to put completions scripts',
+    #    schema  => ['array*', of => 'str*'],
     #    schema  => 'str*',
-    #    default => '/etc/fish/completions',
+    #    default => [],
     #},
     #zsh_per_user_dir => {
     #    summary => 'Directory to put completions scripts',
-    #    schema  => 'str*',
+    #    schema  => ['array*', of => 'str*'],
     #},
 );
 
@@ -134,25 +125,29 @@ sub _set_args_defaults {
 
     $args->{global} //= ($> ? 0:1);
 
-    $args->{bash_global_dir}   //= '/etc/bash_completion.d';
-    $args->{bash_per_user_dir} //= "$ENV{HOME}/.config/bash/completions";
-    $args->{fish_global_dir}   //= '/etc/fish/completions';
-    $args->{fish_per_user_dir} //= "$ENV{HOME}/.config/fish/completions";
-    $args->{tcsh_global_dir}   //= '/etc/bash_completion.d';
-    $args->{tcsh_per_user_dir} //= "$ENV{HOME}/.config/bash/completions";
-    $args->{zsh_global_dir}    //= '/etc/zsh/completions';
-    $args->{zsh_per_user_dir}  //= "$ENV{HOME}/.config/zsh/completions";
+    $args->{bash_global_dir}   //= ['/usr/share/bash-completion/completions',
+                                    '/etc/bash_completion.d'];
+    $args->{bash_per_user_dir} //= ["$ENV{HOME}/.config/bash/completions"];
+    $args->{fish_global_dir}   //= ['/usr/share/fish/completions',
+                                    '/etc/fish/completions'];
+    $args->{fish_per_user_dir} //= ["$ENV{HOME}/.config/fish/completions"];
+    $args->{tcsh_global_dir}   //= [];
+    $args->{tcsh_per_user_dir} //= ["$ENV{HOME}/.config/tcsh/completions"];
+    $args->{zsh_global_dir}    //= [];
+    $args->{zsh_per_user_dir}  //= ["$ENV{HOME}/.config/zsh/completions"];
 }
 
 sub _gen_completion_script {
+    require String::ShellQuote;
+
     my %args = @_;
 
     my $detres = $args{detect_res};
     my $shell  = $args{shell};
     my $prog   = $detres->[3]{'func.completee'} // $args{prog};
-    my $qprog  = shell_quote($prog);
+    my $qprog  = String::ShellQuote::shell_quote($prog);
     my $comp   = $detres->[3]{'func.completer_command'};
-    my $qcomp  = shell_quote($comp);
+    my $qcomp  = String::ShellQuote::shell_quote($comp);
 
     my $script;
     if ($shell eq 'bash') {
@@ -171,27 +166,27 @@ sub _gen_completion_script {
     $script;
 }
 
-sub _completion_scripts_dir {
+sub _completion_scripts_dirs {
     my %args = @_;
 
     my $shell  = $args{shell};
     my $global = $args{global};
 
-    my $dir;
+    my $dirs;
     if ($shell eq 'bash') {
-        $dir = $global ? $args{bash_global_dir} :
+        $dirs = $global ? $args{bash_global_dir} :
             $args{bash_per_user_dir};
     } elsif ($shell eq 'fish') {
-        $dir = $global ? $args{fish_global_dir} :
+        $dirs = $global ? $args{fish_global_dir} :
             $args{fish_per_user_dir};
     } elsif ($shell eq 'tcsh') {
-        $dir = $global ? $args{tcsh_global_dir} :
+        $dirs = $global ? $args{tcsh_global_dir} :
             $args{tcsh_per_user_dir};
     } elsif ($shell eq 'zsh') {
-        $dir = $global ? $args{zsh_global_dir} :
+        $dirs = $global ? $args{zsh_global_dir} :
             $args{zsh_per_user_dir};
     }
-    $dir;
+    $dirs;
 }
 
 sub _completion_script_path {
@@ -202,7 +197,7 @@ sub _completion_script_path {
     my $shell  = $args{shell};
     my $global = $args{global};
 
-    my $dir = $args{dir} // _completion_scripts_dir(%args);
+    my $dir = $args{dir} // _completion_scripts_dirs(%args)->[-1];
     my $path;
     if ($shell eq 'bash') {
         $path = "$dir/$prog";
@@ -294,8 +289,9 @@ sub _generate_or_remove {
                 next PROG;
             }
         } else {
+            require File::Which;
             $prog = $prog0;
-            $progpath = which($prog0);
+            $progpath = File::Which::which($prog0);
             unless ($progpath) {
                 $log->errorf("'%s' not found in PATH, skipped", $prog0);
                 $envres->add_result(404, "Not in PATH", {item_id=>$prog0});
@@ -374,7 +370,7 @@ $SPEC{init} = {
     description => <<'_',
 
 This subcommand creates the completion directories and initialization shell
-script.
+script, as well as run `generate`.
 
 _
     args => {
@@ -391,29 +387,33 @@ sub init {
 
     my $instruction = '';
 
-    my $dir;
+    my $dirs;
     my $init_location;
     my $init_script;
     my $init_script_path;
     if ($shell eq 'bash') {
         $init_location = $global ? "/etc/bash.bashrc" : "~/.bashrc";
-        $dir = $global ? $args{bash_global_dir} : $args{bash_per_user_dir};
-        $init_script = <<'_';
+        $dirs = _completion_scripts_dirs(%args);
+        $init_script = <<_;
+# generated by shcompgen version $App::shcompgen::VERSION
+_
+        $init_script .= <<'_';
 _shcompgen_loader()
 {
-    local f
-    for f in ~/.config/bash/completions/"$1" /etc/bash_completion.d/"$1"; do
-        if [[ -f "$f" ]]; then . "$f"; return; fi
+    local d
+    # XXX should we use --bash-{global,per-user}-dir supplied by user here? probably.
+    for d in ~/.config/bash/completions /etc/bash_completion.d /usr/share/bash-completion/completions; do
+        if [[ -f "$d/$1" ]]; then . "$d/$1"; return; fi
     done
 
     # check if bash-completion is active by the existence of function
     # '_completion_loader'. if it is, delegate to the function.
-    if [[ "`type -t _completion_loader`" = "function" ]]; then _completion_loader "$1"; fi
+    if [[ "`type -t _completion_loader`" = "function" ]]; then _completion_loader "$1"; return 124; fi
 
     # otherwise, do as default (XXX still need to fix this, we don't want to
-    # install a fixed completion for unknown commands)
-    complete -o default "$1"
-    return 0
+    # install a fixed completion for unknown commands; but using 'compopt -o
+    # default' also creates a 'complete' entry)
+    complete -o default "$1" && return 124
 }
 complete -D -F _shcompgen_loader
 _
@@ -426,16 +426,21 @@ _
         return [412, "Shell '$shell' not yet supported"];
     }
 
-    $instruction .= "Congratulations, shcompgen initialization is successful.\n\n";
-
-    unless (-d $dir) {
-        make_path($dir) or return [500, "Can't create $dir: $!"];
-        $instruction .= "Directory '$dir' created.\n\n";
+    for my $dir (@$dirs) {
+        unless (-d $dir) {
+            require File::Path;
+            File::Path::make_path($dir)
+                  or return [500, "Can't create $dir: $!"];
+            $instruction .= "Directory '$dir' created.\n\n";
+        }
     }
 
     write_file($init_script_path, $init_script);
-    $instruction .= "Please put this into your $init_location:\n\n";
-    $instruction .= " . $init_script_path\n\n";
+    $instruction .= "Please put this into your $init_location:".
+        "\n\n" . " . $init_script_path\n\n";
+
+    $instruction = "Congratulations, shcompgen initialization is successful.".
+        "\n\n$instruction";
 
     [200, "OK", $instruction];
 }
@@ -456,7 +461,23 @@ Can contain path (e.g. `../foo`) or a plain word (`foo`) in which case will be
 searched from PATH.
 
 _
-            element_completion => $_complete_prog,
+            element_completion => sub {
+                require Complete::Util;
+
+                my %args = @_;
+                my $word = $args{word} // '';
+                if ($word =~ m!/!) {
+                    # user might want to mention a program file (e.g. ./foo)
+                    return {
+                        words => Complete::Util::complete_file(
+                            word=>$word, ci=>1, filter=>'d|rxf'),
+                        path_sep => '/',
+                    };
+                } else {
+                    # or user might want to mention a program in PATH
+                    Complete::Util::complete_program(word=>$word, ci=>1);
+                }
+            },
         },
         replace => {
             summary => 'Replace existing script',
@@ -491,40 +512,43 @@ sub list {
     _set_args_defaults(\%args);
 
     my @res;
-    my $dir = _completion_scripts_dir(%args);
-    $log->debugf("Opening dir %s ...", $dir);
-    opendir my($dh), $dir or return [500, "Can't read dir '$dir': $!"];
-    for my $entry (readdir $dh) {
-        next if $entry eq '.' || $entry eq '..';
+    my $dirs = _completion_scripts_dirs(%args);
+    for my $dir (@$dirs) {
+        $log->debugf("Opening dir %s ...", $dir);
+        opendir my($dh), $dir or return [500, "Can't read dir '$dir': $!"];
+        for my $entry (readdir $dh) {
+            next if $entry eq '.' || $entry eq '..';
 
-        # XXX refactor: put to function (_file_to_prog)
-        my $prog = $entry; $prog =~ /\.fish\z/ if $args{shell} eq 'fish';
-        next unless $prog =~ $re_progname;
+            # XXX refactor: put to function (_file_to_prog)
+            my $prog = $entry; $prog =~ /\.fish\z/ if $args{shell} eq 'fish';
+            next unless $prog =~ $re_progname;
 
-        # XXX refactor: put to function (_read_completion_script)
-        my $comppath = _completion_script_path(%args, dir=>$dir, prog=>$prog);
-        $log->debugf("Checking completion script '%s' ...", $comppath);
-        my $content;
-        eval { $content = read_file($comppath) };
-        if ($@) {
-            $log->warnf("Can't open file '%s': %s", $comppath, $@);
-            next;
-        };
-        unless ($content =~ /^# FRAGMENT id=shcompgen-header note=(.+)(?:\s|$)/m) {
-            $log->debugf("Skipping prog %s, not generated by us", $entry);
-            next;
-        }
-        my $note = $1;
-        if ($args{detail}) {
-            push @res, {
-                prog => $prog,
-                note => $note,
-                path => $comppath,
+            # XXX refactor: put to function (_read_completion_script)
+            my $comppath = _completion_script_path(
+                %args, dir=>$dir, prog=>$prog);
+            $log->debugf("Checking completion script '%s' ...", $comppath);
+            my $content;
+            eval { $content = read_file($comppath) };
+            if ($@) {
+                $log->warnf("Can't open file '%s': %s", $comppath, $@);
+                next;
             };
-        } else {
-            push @res, $prog;
+            unless ($content =~ /^# FRAGMENT id=shcompgen-header note=(.+)(?:\s|$)/m) {
+                $log->debugf("Skipping prog %s, not generated by us", $entry);
+                next;
+            }
+            my $note = $1;
+            if ($args{detail}) {
+                push @res, {
+                    prog => $prog,
+                    note => $note,
+                    path => $comppath,
+                };
+            } else {
+                push @res, $prog;
+            }
         }
-    }
+    } # for $dir
 
     [200, "OK", \@res,
      {('cmdline.default_format'=>'text-simple') x !$args{detail}}];
@@ -546,7 +570,36 @@ Can contain path (e.g. `../foo`) or a plain word (`foo`) in which case will be
 searched from PATH.
 
 _
-            element_completion => $_complete_prog,
+            element_completion => sub {
+                require Complete::Util;
+
+                my %args = @_;
+                my $word = $args{word} // '';
+
+                # return list of programs in the completion scripts dir
+
+                my $cmdline = $args{extras}{cmdline};
+                my $r       = $args{extras}{r};
+
+                # we are not called from cmdline, bail (actually we might want
+                # to return list of programs anyway, but we want to read the
+                # value of bash_global_dir et al)
+                return undef unless $cmdline;
+
+                # strip subcommand name
+                if (($r->{subcommand_name_from} // '') eq 'arg') {
+                    shift @ARGV;
+                }
+
+                my $res = $cmdline->parse_argv($r);
+                return undef unless $res->[0] == 200;
+                my $cmd_args = $res->[2];
+
+                $res = list(%$cmd_args);
+                return undef unless $res->[0] == 200;
+                Complete::Util::complete_array_elem(
+                    array=>$res->[2], word=>$word, ci=>1);
+            },
         },
     },
 };
@@ -571,7 +624,7 @@ App::shcompgen - Backend for shcompgen script
 
 =head1 VERSION
 
-This document describes version 0.04 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-13.
+This document describes version 0.05 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-14.
 
 =head1 FUNCTIONS
 
@@ -584,11 +637,11 @@ Arguments ('*' denotes required arguments):
 
 =over 4
 
-=item * B<bash_global_dir> => I<str> (default: "/etc/bash_completion.d")
+=item * B<bash_global_dir> => I<array> (default: ["/usr/share/bash-completion/completions", "/etc/bash_completion.d"])
 
 Directory to put completions scripts.
 
-=item * B<bash_per_user_dir> => I<str>
+=item * B<bash_per_user_dir> => I<array>
 
 Directory to put completions scripts.
 
@@ -645,17 +698,17 @@ that contains extra information.
 Initialize shcompgen.
 
 This subcommand creates the completion directories and initialization shell
-script.
+script, as well as run C<generate>.
 
 Arguments ('*' denotes required arguments):
 
 =over 4
 
-=item * B<bash_global_dir> => I<str> (default: "/etc/bash_completion.d")
+=item * B<bash_global_dir> => I<array> (default: ["/usr/share/bash-completion/completions", "/etc/bash_completion.d"])
 
 Directory to put completions scripts.
 
-=item * B<bash_per_user_dir> => I<str>
+=item * B<bash_per_user_dir> => I<array>
 
 Directory to put completions scripts.
 
@@ -702,11 +755,11 @@ Arguments ('*' denotes required arguments):
 
 =over 4
 
-=item * B<bash_global_dir> => I<str> (default: "/etc/bash_completion.d")
+=item * B<bash_global_dir> => I<array> (default: ["/usr/share/bash-completion/completions", "/etc/bash_completion.d"])
 
 Directory to put completions scripts.
 
-=item * B<bash_per_user_dir> => I<str>
+=item * B<bash_per_user_dir> => I<array>
 
 Directory to put completions scripts.
 
@@ -755,11 +808,11 @@ Arguments ('*' denotes required arguments):
 
 =over 4
 
-=item * B<bash_global_dir> => I<str> (default: "/etc/bash_completion.d")
+=item * B<bash_global_dir> => I<array> (default: ["/usr/share/bash-completion/completions", "/etc/bash_completion.d"])
 
 Directory to put completions scripts.
 
-=item * B<bash_per_user_dir> => I<str>
+=item * B<bash_per_user_dir> => I<array>
 
 Directory to put completions scripts.
 
