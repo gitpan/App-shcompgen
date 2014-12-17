@@ -1,7 +1,7 @@
 package App::shcompgen;
 
-our $DATE = '2014-12-14'; # DATE
-our $VERSION = '0.06'; # VERSION
+our $DATE = '2014-12-17'; # DATE
+our $VERSION = '0.07'; # VERSION
 
 use 5.010001;
 use strict;
@@ -376,7 +376,6 @@ _
     args => {
         %common_args,
     },
-    'cmdline.default_format' => 'text-simple',
 };
 sub init {
     my %args = @_;
@@ -400,15 +399,28 @@ _
         $init_script .= <<'_';
 _shcompgen_loader()
 {
-    local d
+    # check if bash-completion is active by the existence of function
+    # '_completion_loader'.
+    local bc_active=0
+    if [[ "`type -t _completion_loader`" = "function" ]]; then bc_active=1; fi
+
     # XXX should we use --bash-{global,per-user}-dir supplied by user here? probably.
-    for d in ~/.config/bash/completions /etc/bash_completion.d /usr/share/bash-completion/completions; do
-        if [[ -f "$d/$1" ]]; then . "$d/$1"; return; fi
+    local dirs
+    if [[ "$bc_active" = 1 ]]; then
+        dirs=(~/.config/bash/completions /etc/bash_completion.d /usr/share/bash-completion/completions)
+    else
+        # we don't use bash-completion scripts when bash-completion is not
+        # initialized because some of the completion scripts require that
+        # bash-completion system is initialized first
+        dirs=(~/.config/bash/completions)
+    fi
+
+    local d
+    for d in ${dirs[*]}; do
+        if [[ -f "$d/$1" ]]; then . "$d/$1"; return 124; fi
     done
 
-    # check if bash-completion is active by the existence of function
-    # '_completion_loader'. if it is, delegate to the function.
-    if [[ "`type -t _completion_loader`" = "function" ]]; then _completion_loader "$1"; return 124; fi
+    if [[ $bc_active = 1 ]]; then _completion_loader "$1"; return 124; fi
 
     # otherwise, do as default (XXX still need to fix this, we don't want to
     # install a fixed completion for unknown commands; but using 'compopt -o
@@ -550,8 +562,7 @@ sub list {
         }
     } # for $dir
 
-    [200, "OK", \@res,
-     {('cmdline.default_format'=>'text-simple') x !$args{detail}}];
+    [200, "OK", \@res];
 }
 
 $SPEC{remove} = {
@@ -610,7 +621,7 @@ sub remove {
 }
 
 1;
-# ABSTRACT: Backend for shcompgen script
+# ABSTRACT: Generate shell completion scripts
 
 __END__
 
@@ -620,11 +631,11 @@ __END__
 
 =head1 NAME
 
-App::shcompgen - Backend for shcompgen script
+App::shcompgen - Generate shell completion scripts
 
 =head1 VERSION
 
-This document describes version 0.06 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-14.
+This document describes version 0.07 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-17.
 
 =head1 FUNCTIONS
 

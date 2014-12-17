@@ -10,7 +10,7 @@ use ExtUtils::MakeMaker;
 
 
 my %WriteMakefileArgs = (
-  "ABSTRACT" => "Backend for shcompgen script",
+  "ABSTRACT" => "Generate shell completion scripts",
   "AUTHOR" => "perlancar <perlancar\@cpan.org>",
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => 0
@@ -42,7 +42,7 @@ my %WriteMakefileArgs = (
     "IPC::Open3" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.06",
+  "VERSION" => "0.07",
   "test" => {
     "TESTS" => "t/*.t"
   }

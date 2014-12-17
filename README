@@ -1,9 +1,9 @@
 NAME
-    App::shcompgen - Backend for shcompgen script
+    App::shcompgen - Generate shell completion scripts
 
 VERSION
-    This document describes version 0.06 of App::shcompgen (from Perl
-    distribution App-shcompgen), released on 2014-12-14.
+    This document describes version 0.07 of App::shcompgen (from Perl
+    distribution App-shcompgen), released on 2014-12-17.
 
 FUNCTIONS
   generate(%args) -> [status, msg, result, meta]
