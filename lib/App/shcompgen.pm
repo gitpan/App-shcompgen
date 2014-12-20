@@ -1,7 +1,7 @@
 package App::shcompgen;
 
-our $DATE = '2014-12-17'; # DATE
-our $VERSION = '0.07'; # VERSION
+our $DATE = '2014-12-20'; # DATE
+our $VERSION = '0.08'; # VERSION
 
 use 5.010001;
 use strict;
@@ -582,31 +582,13 @@ searched from PATH.
 
 _
             element_completion => sub {
+                # list programs in the completion scripts dir
                 require Complete::Util;
 
                 my %args = @_;
                 my $word = $args{word} // '';
 
-                # return list of programs in the completion scripts dir
-
-                my $cmdline = $args{extras}{cmdline};
-                my $r       = $args{extras}{r};
-
-                # we are not called from cmdline, bail (actually we might want
-                # to return list of programs anyway, but we want to read the
-                # value of bash_global_dir et al)
-                return undef unless $cmdline;
-
-                # strip subcommand name
-                if (($r->{subcommand_name_from} // '') eq 'arg') {
-                    shift @ARGV;
-                }
-
-                my $res = $cmdline->parse_argv($r);
-                return undef unless $res->[0] == 200;
-                my $cmd_args = $res->[2];
-
-                $res = list(%$cmd_args);
+                my $res = list($args{args});
                 return undef unless $res->[0] == 200;
                 Complete::Util::complete_array_elem(
                     array=>$res->[2], word=>$word, ci=>1);
@@ -635,7 +617,7 @@ App::shcompgen - Generate shell completion scripts
 
 =head1 VERSION
 
-This document describes version 0.07 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-17.
+This document describes version 0.08 of App::shcompgen (from Perl distribution App-shcompgen), released on 2014-12-20.
 
 =head1 FUNCTIONS
 
